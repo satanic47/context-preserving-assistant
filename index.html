@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Context-Preserving Assistant | Auth0 Identity & API Delegation</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Auth0 SPA JS SDK -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.1/auth0-spa-js.production.js"></script>
+</head>
+<body>
+  <!-- Header / Navigation -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>Context-Preserving Assistant</h1>
+        <span class="brand-tag">MLH Global Hack Week: Builders Week • Partner: Auth0</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div id="authStatusPill" class="status-pill status-guest">○ Checking Auth State...</div>
+      <button id="btnDemoToggle" class="btn-secondary" title="Test immediately without logging into Auth0">⚡ Fast Demo Mode</button>
+      <button id="btnSettings" class="btn-icon" title="Auth0 Tenant Settings">⚙️</button>
+      <button id="btnLogin" class="btn-primary">Sign In with Auth0</button>
+      <button id="btnLogout" class="btn-danger" style="display: none;">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-main">
+    <!-- Left Column: Conversational Assistant -->
+    <section class="assistant-pane">
+      <div class="pane-header">
+        <div class="pane-title">
+          <span class="bot-badge">AI Agent</span>
+          <h2>Session Assistant</h2>
+        </div>
+        <div class="pane-subtitle">Identity Context Preserved via Auth0 Bearer Tokens</div>
+      </div>
+
+      <!-- Chat Messages Container -->
+      <div id="chatMessages" class="chat-messages">
+        <!-- Messages injected by JS -->
+      </div>
+
+      <!-- Quick Action Prompt Chips -->
+      <div class="prompt-chips-container">
+        <span class="chips-label">Quick Actions:</span>
+        <button class="prompt-chip" data-prompt="What is the weather in my home city?">🌦️ Check Home Weather</button>
+        <button class="prompt-chip" data-prompt="Show my saved preferences">⚙️ Show Saved Preferences</button>
+        <button class="prompt-chip" data-prompt="Change my city to Tokyo">🔄 Change City to Tokyo</button>
+        <button class="prompt-chip" data-prompt="Switch to Fahrenheit">🌡️ Switch to Fahrenheit</button>
+        <button class="prompt-chip" data-prompt="Inspect my security token">🔐 Inspect Token</button>
+      </div>
+
+      <!-- Chat Input Bar -->
+      <form id="chatForm" class="chat-form">
+        <input 
+          type="text" 
+          id="chatInput" 
+          placeholder="Ask anything (e.g. 'What is the weather in my home city?' or 'Update my city to Paris')..." 
+          autocomplete="off"
+          required
+        />
+        <button type="submit" id="btnSend" class="btn-send">
+          <span>Send</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </form>
+    </section>
+
+    <!-- Right Column: Real-Time Context & API Traces -->
+    <aside class="inspector-pane">
+      <!-- User Identity Card -->
+      <div id="userProfileCard" class="card user-card" style="display: none;">
+        <div class="card-header">
+          <span class="card-icon">👤</span>
+          <h3>Authenticated Identity</h3>
+          <span class="badge-pkce">Auth0 PKCE</span>
+        </div>
+        <div class="user-info-row">
+          <img id="userAvatar" class="user-avatar" src="" alt="Avatar" />
+          <div class="user-details">
+            <div id="profileName" class="profile-name"></div>
+            <div id="profileEmail" class="profile-email"></div>
+            <div id="profileSub" class="profile-sub"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preserved Identity Context (First-Party Settings) -->
+      <div class="card context-card">
+        <div class="card-header">
+          <span class="card-icon">🧠</span>
+          <h3>Preserved Session Context</h3>
+          <span class="badge-fpa">1st-Party API</span>
+        </div>
+        <div class="context-grid">
+          <div class="context-item">
+            <span class="context-label">Home Locus (City)</span>
+            <span id="contextCityVal" class="context-value">Not loaded</span>
+          </div>
+          <div class="context-item">
+            <span class="context-label">Temperature Unit</span>
+            <span id="contextUnitVal" class="context-value">CELSIUS</span>
+          </div>
+          <div class="context-item">
+            <span class="context-label">User Role</span>
+            <span id="contextRoleVal" class="context-value">Builder / Engineer</span>
+          </div>
+          <div class="context-item">
+            <span class="context-label">Last Synchronized</span>
+            <span id="contextLastSync" class="context-value">Standby</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live API Audit Trail (Proof of Context Preservation) -->
+      <div class="card traces-card">
+        <div class="card-header">
+          <div class="header-left">
+            <span class="card-icon">⚡</span>
+            <h3>Live API Audit Trail</h3>
+          </div>
+          <button id="btnClearTraces" class="btn-ghost-sm" title="Clear log history">Clear</button>
+        </div>
+        <div class="traces-subtitle">Real-time proof of First-Party authentication & Third-Party delegation</div>
+
+        <div id="apiTracesList" class="traces-list">
+          <div class="empty-trace">No API calls recorded yet. Send a prompt to watch live delegation!</div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Auth0 Configuration Modal -->
+  <div id="configModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Auth0 Application Configuration</h3>
+        <button id="btnCloseModal" class="modal-close">&times;</button>
+      </div>
+      <form id="configForm" class="modal-body">
+        <div class="form-group">
+          <label>Auth0 Domain</label>
+          <input type="text" id="modalDomain" required />
+          <span class="field-hint">e.g. dev-ycggan14b30pol1n.eu.auth0.com</span>
+        </div>
+        <div class="form-group">
+          <label>Auth0 Client ID</label>
+          <input type="text" id="modalClientId" required />
+          <span class="field-hint">Your Single Page Application Client ID</span>
+        </div>
+        <div class="form-group">
+          <label>Callback / Allowed Web Origin</label>
+          <input type="text" id="modalCallbackUrl" readonly />
+          <span class="field-hint">Add this URL to <strong>Allowed Callback URLs</strong> and <strong>Allowed Web Origins</strong> in your Auth0 dashboard.</span>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="btn-primary">Save & Connect</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="api-service.js"></script>
+  <script src="assistant.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

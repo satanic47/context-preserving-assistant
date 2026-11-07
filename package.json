@@ -1,0 +1,21 @@
+{
+  "name": "context-preserving-assistant",
+  "version": "1.0.0",
+  "description": "Full-stack personal assistant demonstrating identity context preservation across First-Party and Third-Party APIs via Auth0 Universal Login.",
+  "main": "index.html",
+  "scripts": {
+    "start": "python server.py"
+  },
+  "keywords": [
+    "auth0",
+    "mlh",
+    "hackathon",
+    "assistant",
+    "identity",
+    "jwt",
+    "open-meteo",
+    "context-preserving"
+  ],
+  "author": "satanic47",
+  "license": "MIT"
+}
